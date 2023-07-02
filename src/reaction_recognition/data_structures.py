@@ -15,3 +15,5 @@ class Reaction(Enum):
     HAPPY = 1
     ANGRY = 2
     TENSE = 3
+
+wrists_id = [15,16] # Wrists landmark ids [left,right]
