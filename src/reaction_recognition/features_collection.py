@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import csv
 
-from data_structures import Reaction,wrists_id
+from data_structures import features_files,directory,wrists_id
 from utils import compute_acceleration,export_to_csv
 
 def collect_features(source,output_files,window_length,label):
@@ -132,23 +132,12 @@ def collect_features(source,output_files,window_length,label):
 fromWebCam = True
 label = "hi"
 window_length = 5
-directory = "./samples/"
-output_files = {
-    "pose": {
-        "name": "pose.csv",
-        "new": True
-    },
-    "face": {
-        "name": "face.csv",
-        "new": True
-    },
-}
 
 if fromWebCam:
-    collect_features(0,output_files,window_length,label)
+    collect_features(0,features_files,window_length,label)
 else:
     # List of file in a directory
     input_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
     for file in input_files:
-        collect_features(os.path.join(directory, file),output_files,window_length,os.path.splitext(file)[0])
+        collect_features(os.path.join(directory, file),features_files,window_length,os.path.splitext(file)[0])
