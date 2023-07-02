@@ -8,7 +8,7 @@ import csv
 from data_structures import Reaction
 from utils import compute_acceleration
 
-def detect_landmarks(source,pose_file,label):
+def detect_landmarks(source,pose_file,window_length,label):
 
     mp_drawing = mp.solutions.drawing_utils # Drawing helpers
     mp_holistic = mp.solutions.holistic # Mediapipe Solutions
@@ -33,7 +33,7 @@ def detect_landmarks(source,pose_file,label):
                 image.flags.writeable = True
                 image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-                # 4. Face Detections
+                # Face Detections
                 '''mp_drawing.draw_landmarks(image, results.face_landmarks, mp_holistic.FACEMESH_TESSELATION, 
                                  mp_drawing.DrawingSpec(color=(80,110,10), thickness=1, circle_radius=1),
                                  mp_drawing.DrawingSpec(color=(80,256,121), thickness=1, circle_radius=1)
@@ -62,10 +62,7 @@ def detect_landmarks(source,pose_file,label):
                     # Append class name 
                     face_row.insert(0, label)
                     
-                    # Export to CSV
-                    with open('coords.csv', mode='a', newline='') as f:
-                        csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                        csv_writer.writerow(face_row)'''
+                    export_to_csv(files["face"],"a",face_row)'''
                     
                 except NameError:
                     print(NameError)
@@ -75,19 +72,21 @@ def detect_landmarks(source,pose_file,label):
 
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
-                '''if count < 11:
+                
+                # Frame block
+                if count < 10:
                     count += 1
                 else:
-                    break'''
+                    break
     
     cap.release()
     cv2.destroyAllWindows()
 
-    # (frame,point,dims) -> (point,dims,frame)
+    # Hypotesis: (frame,point,dims) -> (point,dims,frame)
     positions = np.array(positions)
     visibility = np.array(visibility)
     
-    #plot the positions over time
+    # Plot the positions over time
     '''plt.figure(figsize=(12, 9))
     plt.plot(positions[:,15,0]), label="left_x")
     plt.plot(positions[:,15,1]), label="left_y")
@@ -100,10 +99,8 @@ def detect_landmarks(source,pose_file,label):
     plt.show()'''
 
     accelerations = compute_acceleration(positions)
-    acceleration_shape = np.shape(accelerations)
-    print(np.shape(positions),np.shape(accelerations))
     
-    #plot the acceleration over time
+    # Plot the acceleration over time
     '''plt.figure(figsize=(12, 9))
     plt.plot(np.multiply(accelerations[:,0,15],visibility[:,15,0]), label="left")
     plt.plot(np.multiply(accelerations[:,0,16],visibility[:,16,0]), label="right")
@@ -112,50 +109,71 @@ def detect_landmarks(source,pose_file,label):
     plt.show()'''
 
     '''
-    #left hand acceleration + visibility
+    # Left hand acceleration + visibility
     left_data = np.array([[accelerations[point,0,15],visibility[point,15,0]] for point in range(acceleration_shape[0])])
-    #right hand acceleration + visibility
+    # Right hand acceleration + visibility
     right_data = np.array([[accelerations[point,0,16],visibility[point,16,0]] for point in range(acceleration_shape[0])])
     print(np.shape(left_data),np.shape(right_data))
-    #pose data
+    # Pose data
     pose_row = [label] + list(left_data.flatten()) + list(right_data.flatten())
     '''
 
-    #row [label,
-    # left_acceleration_mean,left_visibility_mean,left_(acceleration*visibility)_element_mean,
-    # right_acceleration_mean,right_visibility_mean,right_(acceleration*visibility)_element_mean]
-    pose_row = [label,np.mean(accelerations[:,0,15]),np.mean(visibility[:,15,0]),np.mean(np.multiply(accelerations[:,0,15],visibility[:,15,0])),np.mean(accelerations[:,0,16]),np.mean(visibility[:,16,0]),np.mean(np.multiply(accelerations[:,0,16],visibility[:,16,0]))]
+    '''row [label,
+    left_acceleration_mean,left_visibility_mean,left_(acceleration*visibility)_element_mean,
+    right_acceleration_mean,right_visibility_mean,right_(acceleration*visibility)_element_mean]'''
+    common_columns = {}
+    for landmark in [15,16]:
+        common_columns[landmark] = [np.mean(accelerations[:,0,landmark]), # Mean of all accelerations
+                                    np.average(accelerations[:,0,landmark],weights=visibility[:,landmark,0])] # Mean of all accelerations, weighted with visibility
 
-    # Export to CSV
-    with open(pose_file, mode="a", newline="") as f:
+    for point in range(np.shape(positions)[0]):
+        pose_row = [label] # maybe window_length
+        for landmark in [15,16]:
+            start = (point-window_length+1)
+            pose_row += [accelerations[point,0,landmark], # Single point acceleration
+                         np.mean(accelerations[start if start >= 0 else 0:point+1,0,landmark]), # Mean of <window_length> accelerations
+                         np.average(accelerations[start if start >= 0 else 0:point+1,0,landmark],weights=visibility[start if start >= 0 else 0:point+1,landmark,0])] # Mean of <window_length> accelerations, weighted with visibility
+            pose_row += common_columns[landmark]
+        export_to_csv(pose_file,"a",pose_row)
+    print(visibility[:,15,0])
+
+def export_to_csv(file,mode,row):
+    with open(file, mode=mode, newline='') as f:
         csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(pose_row)
-    
+        csv_writer.writerow(row)
 
 fromWebCam = True
 label = "hi"
+window_length = 5
+files = {
+    "pose": "pose.csv",
+    "face": "face.csv",
+}
 newFile = {
     "face": True,
     "acceleration": True
 }
 directory = "./samples/"
-pose_file = "pose.csv"
 
+'''a = [-1.4696402549743663,-1.8762204051017772,-1.9387177824974076,-1.7575988173484813,-1.7006577253341686,-1.4998279213905346]
+b = [0.99557209,0.99437881,0.993406,0.99242508,0.99085259,0.99040836]
+print(a[:window_length])
+print(np.mean(a[:window_length]),np.average(a[:window_length],weights=b[:window_length]))
+print(a[1:window_length+1])
+print(np.mean(a[1:window_length+1]),np.average(a[1:window_length+1],weights=b[1:window_length+1]))
+'''
 if newFile["acceleration"]:
     landmarks = ["class"]
     for hand in ["l","r"]:
-        landmarks += [f"{hand}_a",f"{hand}_v",f"{hand}_av"]
+        landmarks += [f"{hand}_a",f"{hand}_wm_a",f"{hand}_wm_av",f"{hand}_m_a",f"{hand}_m_av"]
     
-    with open(pose_file, mode="w", newline="") as f:
-        csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        csv_writer.writerow(landmarks)
+    export_to_csv(files["pose"],"w",landmarks)
 
 if fromWebCam:
-    detect_landmarks(0,pose_file,label)
+    detect_landmarks(0,files["pose"],window_length,label)
 else:
-    #list of file in a directory
+    # List of file in a directory
     files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
 
     for file in files:
-        detect_landmarks(os.path.join(directory, file),pose_file,os.path.splitext(file)[0])
-        #file without extension
+        detect_landmarks(os.path.join(directory, file),files["pose"],window_length,os.path.splitext(file)[0])
