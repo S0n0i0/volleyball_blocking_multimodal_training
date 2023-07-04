@@ -6,8 +6,8 @@ import os
 import pandas as pd
 import pickle
 
-from data_structures import directories,wrists_id,eyebrows_id,corners_lips_id,window_length
-from utils import compute_acceleration,export_to_csv
+from data_structures import directories,window_length,wrists_id,eyebrows_id,corners_lips_id,center_lips
+from utils import get_acceleration_features
 
 def detect_reaction(source,window_length,model):
 
@@ -18,6 +18,12 @@ def detect_reaction(source,window_length,model):
     pose_positions = []
     pose_visibility = []
     pose_row = []
+    lips_positions = []
+    lips_visibility = []
+    face_row = []
+    visibility_row = []
+    center_positions = []
+    nose_positions = []
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         while cap.isOpened():
             ret, frame = cap.read()
@@ -40,10 +46,10 @@ def detect_reaction(source,window_length,model):
                                         )
                 
                 # Face Detections
-                '''mp_drawing.draw_landmarks(image, results.face_landmarks, mp_holistic.FACEMESH_TESSELATION, 
+                mp_drawing.draw_landmarks(image, results.face_landmarks, mp_holistic.FACEMESH_TESSELATION, 
                                  mp_drawing.DrawingSpec(color=(80,110,10), thickness=1, circle_radius=1),
                                  mp_drawing.DrawingSpec(color=(80,256,121), thickness=1, circle_radius=1)
-                                 )'''
+                                 )
 
                 try:
                     # Extract Pose landmarks
@@ -52,11 +58,16 @@ def detect_reaction(source,window_length,model):
                     pose_visibility += [[[landmark.visibility] for landmark in pose]]
 
                     # Extract Face landmarks
-                    '''face = results.face_landmarks.landmark
-                    face_row = list(np.array([[face[landmark].y, face[landmark].visibility] for landmark in np.array(eyebrows_id).flatten()]).flatten())'''
+                    face = results.face_landmarks.landmark
+                    #center_positions += [[face[landmark_id].y for landmark_id in center_lips]] 
+                    lips_positions += [[#np.mean([face[landmark_id].y for landmark_id in center_lips]),
+                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_id[0]]),
+                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_id[1]])]]
                     
-                except NameError:
-                    print(NameError)
+                    #face_row = list(np.array([[face[landmark].y, face[landmark].visibility] for landmark in np.array(eyebrows_id).flatten()]).flatten())
+                    
+                except Exception as err:
+                    print(err)
                     pass
                         
                 cv2.imshow('Monitoring video', image)
@@ -73,48 +84,23 @@ def detect_reaction(source,window_length,model):
     cap.release()
     cv2.destroyAllWindows()
 
+    center_positions = np.array(center_positions)
+    lips_positions = np.array(lips_positions)
+    print(np.shape(center_positions))
+    plt.figure(figsize=(12, 9))
+    '''plt.plot(lips_positions[:,0], label="center")
+    plt.plot(center_positions[:,0], label="center_up")
+    plt.plot(center_positions[:,1], label="center_down")
+    plt.plot(nose_positions[:], label="nose")'''
+    plt.plot(lips_positions[:,1], label="left")
+    plt.plot(lips_positions[:,2], label="right")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
     pose_positions = np.array(pose_positions)
     pose_visibility = np.array(pose_visibility)
-    
-    # Plot the positions over time
-    '''plt.figure(figsize=(12, 9))
-    plt.plot(pose_positions[:,15,0], label="left_x")
-    plt.plot(pose_positions[:,15,1], label="left_y")
-    plt.plot(pose_positions[:,15,2], label="left_z")
-    plt.plot(pose_positions[:,16,0], label="right_x")
-    plt.plot(pose_positions[:,16,1], label="right_y")
-    plt.plot(pose_positions[:,16,2], label="right_z")
-    plt.legend()
-    plt.grid(True)
-    plt.show()'''
-
-    accelerations = compute_acceleration(pose_positions)
-    
-    # Plot the acceleration over time
-    '''plt.figure(figsize=(12, 9))
-    plt.plot(np.multiply(accelerations[:,0,15],pose_visibility[:,15,0]), label="left")
-    plt.plot(np.multiply(accelerations[:,0,16],pose_visibility[:,16,0]), label="right")
-    plt.legend()
-    plt.grid(True)
-    plt.show()'''
-
-    common_columns = {}
-    for landmark in wrists_id:
-        common_columns[landmark] = [np.mean(accelerations[:,0,landmark]), # Mean of all accelerations
-                                    np.average(accelerations[:,0,landmark],weights=pose_visibility[:,landmark,0])] # Mean of all accelerations, weighted with visibility
-
-    pose_X = []
-    for point in range(np.shape(pose_positions)[0]):
-        pose_row = []
-        for landmark in wrists_id:
-            start = (point-window_length+1)
-            pose_row += [accelerations[point,0,landmark], # Single point acceleration
-                         np.mean(accelerations[start if start >= 0 else 0:point+1,0,landmark]), # Mean of <window_length> accelerations
-                         np.average(accelerations[start if start >= 0 else 0:point+1,0,landmark],weights=pose_visibility[start if start >= 0 else 0:point+1,landmark,0])] # Mean of <window_length> accelerations, weighted with visibility
-            pose_row += common_columns[landmark]
-        pose_X += [pose_row]
-    
-    pose_X = pd.DataFrame(pose_X)
+    pose_X = pd.DataFrame(get_acceleration_features(window_length,wrists_id,pose_positions,pose_visibility))
     pose_reaction_class = model.predict(pose_X)[0]
     pose_reaction_prob = model.predict_proba(pose_X)[0]
     print(pose_reaction_class, pose_reaction_prob)

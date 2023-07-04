@@ -1,11 +1,11 @@
 import mediapipe as mp # Import mediapipe
 import cv2 # Import opencv
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 
-from data_structures import directories,features_files,wrists_id,Reaction,features_directories_correspondences,window_length
-from utils import compute_acceleration,export_to_csv
+from utils import export_to_csv
+from data_structures import Reaction,directories,wrists_id,features_files,window_length,features_directories_correspondences
+from imu_reaction_recognition import get_acceleration_features
 
 def collect_features(source: str | int, output_files, window_length: int, label: Reaction):
 
@@ -19,14 +19,6 @@ def collect_features(source: str | int, output_files, window_length: int, label:
             landmarks += [f"{wrist}_a",f"{wrist}_wm_a",f"{wrist}_wm_av",f"{wrist}_m_a",f"{wrist}_m_av"]
         export_to_csv(os.path.join(directories["support_files"],output_files["pose"]["name"]),"w",landmarks)
         output_files["pose"]["new"] = False
-    
-    #Face header
-    '''if output_files["face"].new:
-        count = 0
-        landmarks = ["class"]
-        for eyebrow in ["l","r"]:
-            landmarks += [f"{eyebrow}_c",f"{eyebrow}_w_c",f"{eyebrow}_w_c"]
-        export_to_csv(os.path.join(directories["support_files"],output_files["face"].name),"w",landmarks)'''
 
     #count = 0
     cap = cv2.VideoCapture(source)
@@ -60,8 +52,8 @@ def collect_features(source: str | int, output_files, window_length: int, label:
                     positions += [[[landmark.x, landmark.y, landmark.z] for landmark in pose]]
                     visibility += [[[landmark.visibility] for landmark in pose]]
                     
-                except NameError:
-                    print(NameError)
+                except Exception as err:
+                    print(err)
                     pass
                 cv2.imshow('Monitoring video', image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
@@ -81,62 +73,14 @@ def collect_features(source: str | int, output_files, window_length: int, label:
     # Hypotesis: (frame,point,dims) -> (point,dims,frame)
     positions = np.array(positions)
     visibility = np.array(visibility)
-    
-    # Plot the positions over time
-    '''plt.figure(figsize=(12, 9))
-    plt.plot(positions[:,15,0], label="left_x")
-    plt.plot(positions[:,15,1], label="left_y")
-    plt.plot(positions[:,15,2], label="left_z")
-    plt.plot(positions[:,16,0], label="right_x")
-    plt.plot(positions[:,16,1], label="right_y")
-    plt.plot(positions[:,16,2], label="right_z")
-    plt.legend()
-    plt.grid(True)
-    plt.show()'''
-
-    accelerations = compute_acceleration(positions)
-    
-    # Plot the acceleration over time
-    '''plt.figure(figsize=(12, 9))
-    plt.plot(np.multiply(accelerations[:,0,15],visibility[:,15,0]), label="left")
-    plt.plot(np.multiply(accelerations[:,0,16],visibility[:,16,0]), label="right")
-    plt.legend()
-    plt.grid(True)
-    plt.show()'''
-
-    
-    '''accelerations_shape = np.shape(accelerations)
-    # Left wrist acceleration + visibility
-    left_data = np.array([[accelerations[point,0,15],visibility[point,15,0]] for point in range(accelerations_shape[0])])
-    # Right wrist acceleration + visibility
-    right_data = np.array([[accelerations[point,0,16],visibility[point,16,0]] for point in range(accelerations_shape[0])])
-    print(np.shape(left_data),np.shape(right_data))
-    # Pose data
-    pose_row = [label] + list(left_data.flatten()) + list(right_data.flatten())'''
-
-    common_columns = {}
-    for landmark in wrists_id:
-        common_columns[landmark] = [np.mean(accelerations[:,0,landmark]), # Mean of all accelerations
-                                    np.average(accelerations[:,0,landmark],weights=visibility[:,landmark,0])] # Mean of all accelerations, weighted with visibility
-
-    for point in range(np.shape(positions)[0]):
-        pose_row = [label] # maybe window_length
-        for landmark in wrists_id:
-            start = (point-window_length+1)
-            pose_row += [accelerations[point,0,landmark], # Single point acceleration
-                         np.mean(accelerations[start if start >= 0 else 0:point+1,0,landmark]), # Mean of <window_length> accelerations
-                         np.average(accelerations[start if start >= 0 else 0:point+1,0,landmark],weights=visibility[start if start >= 0 else 0:point+1,landmark,0])] # Mean of <window_length> accelerations, weighted with visibility
-            pose_row += common_columns[landmark]
-        export_to_csv(os.path.join(directories["support_files"],output_files["pose"]["name"]),"a",pose_row)
+    get_acceleration_features(window_length,wrists_id,positions,visibility,plots,label,directories,output_files)
 
 fromWebCam = False
 label = "hi"
-
-to_initialize = False
-for file in features_files:
-    if features_files[file]["new"]:
-        to_initialize = True
-        break
+plots = {
+    "positions":False,
+    "accelerations":False
+}
 
 if fromWebCam:
     collect_features(0,features_files,window_length,label)
