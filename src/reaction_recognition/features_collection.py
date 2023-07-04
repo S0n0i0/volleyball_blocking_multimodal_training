@@ -3,12 +3,11 @@ import cv2 # Import opencv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import csv
 
-from data_structures import features_files,directory,wrists_id
+from data_structures import directories,features_files,wrists_id,Reaction,features_directories_correspondences,window_length
 from utils import compute_acceleration,export_to_csv
 
-def collect_features(source,output_files,window_length,label):
+def collect_features(source: str | int, output_files, window_length: int, label: Reaction):
 
     mp_drawing = mp.solutions.drawing_utils # Drawing helpers
     mp_holistic = mp.solutions.holistic # Mediapipe Solutions
@@ -18,7 +17,8 @@ def collect_features(source,output_files,window_length,label):
         landmarks = ["class"]
         for wrist in ["l","r"]:
             landmarks += [f"{wrist}_a",f"{wrist}_wm_a",f"{wrist}_wm_av",f"{wrist}_m_a",f"{wrist}_m_av"]
-        export_to_csv(output_files["pose"]["name"],"w",landmarks)
+        export_to_csv(os.path.join(directories["support_files"],output_files["pose"]["name"]),"w",landmarks)
+        output_files["pose"]["new"] = False
     
     #Face header
     '''if output_files["face"].new:
@@ -26,9 +26,9 @@ def collect_features(source,output_files,window_length,label):
         landmarks = ["class"]
         for eyebrow in ["l","r"]:
             landmarks += [f"{eyebrow}_c",f"{eyebrow}_w_c",f"{eyebrow}_w_c"]
-        export_to_csv(output_files["face"].name,"w",landmarks)'''
+        export_to_csv(os.path.join(directories["support_files"],output_files["face"].name),"w",landmarks)'''
 
-    count = 0
+    #count = 0
     cap = cv2.VideoCapture(source)
     positions = []
     visibility = []
@@ -63,17 +63,17 @@ def collect_features(source,output_files,window_length,label):
                 except NameError:
                     print(NameError)
                     pass
-                        
-                cv2.imshow('Raw Webcam Feed', image)
-
+                cv2.imshow('Monitoring video', image)
                 if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
-                
+
                 # Frame cap
                 '''if count < 10:
                     count += 1
                 else:
                     break'''
+            else:
+                break
     
     cap.release()
     cv2.destroyAllWindows()
@@ -84,12 +84,12 @@ def collect_features(source,output_files,window_length,label):
     
     # Plot the positions over time
     '''plt.figure(figsize=(12, 9))
-    plt.plot(positions[:,15,0]), label="left_x")
-    plt.plot(positions[:,15,1]), label="left_y")
-    plt.plot(positions[:,15,2]), label="left_z")
-    plt.plot(positions[:,16,0]), label="right_x")
-    plt.plot(positions[:,16,1]), label="right_y")
-    plt.plot(positions[:,16,2]), label="right_z")
+    plt.plot(positions[:,15,0], label="left_x")
+    plt.plot(positions[:,15,1], label="left_y")
+    plt.plot(positions[:,15,2], label="left_z")
+    plt.plot(positions[:,16,0], label="right_x")
+    plt.plot(positions[:,16,1], label="right_y")
+    plt.plot(positions[:,16,2], label="right_z")
     plt.legend()
     plt.grid(True)
     plt.show()'''
@@ -104,15 +104,15 @@ def collect_features(source,output_files,window_length,label):
     plt.grid(True)
     plt.show()'''
 
-    '''
+    
+    '''accelerations_shape = np.shape(accelerations)
     # Left wrist acceleration + visibility
-    left_data = np.array([[accelerations[point,0,15],visibility[point,15,0]] for point in range(acceleration_shape[0])])
+    left_data = np.array([[accelerations[point,0,15],visibility[point,15,0]] for point in range(accelerations_shape[0])])
     # Right wrist acceleration + visibility
-    right_data = np.array([[accelerations[point,0,16],visibility[point,16,0]] for point in range(acceleration_shape[0])])
+    right_data = np.array([[accelerations[point,0,16],visibility[point,16,0]] for point in range(accelerations_shape[0])])
     print(np.shape(left_data),np.shape(right_data))
     # Pose data
-    pose_row = [label] + list(left_data.flatten()) + list(right_data.flatten())
-    '''
+    pose_row = [label] + list(left_data.flatten()) + list(right_data.flatten())'''
 
     common_columns = {}
     for landmark in wrists_id:
@@ -127,17 +127,26 @@ def collect_features(source,output_files,window_length,label):
                          np.mean(accelerations[start if start >= 0 else 0:point+1,0,landmark]), # Mean of <window_length> accelerations
                          np.average(accelerations[start if start >= 0 else 0:point+1,0,landmark],weights=visibility[start if start >= 0 else 0:point+1,landmark,0])] # Mean of <window_length> accelerations, weighted with visibility
             pose_row += common_columns[landmark]
-        export_to_csv(output_files["pose"]["name"],"a",pose_row)
+        export_to_csv(os.path.join(directories["support_files"],output_files["pose"]["name"]),"a",pose_row)
 
-fromWebCam = True
+fromWebCam = False
 label = "hi"
-window_length = 5
+
+to_initialize = False
+for file in features_files:
+    if features_files[file]["new"]:
+        to_initialize = True
+        break
 
 if fromWebCam:
     collect_features(0,features_files,window_length,label)
 else:
-    # List of file in a directory
-    input_files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+    for reaction_label in features_directories_correspondences.keys():
+        # List of file in a directory
+        input_files = [f for f in os.listdir(features_directories_correspondences[reaction_label]) if os.path.isfile(os.path.join(features_directories_correspondences[reaction_label], f))]
 
-    for file in input_files:
-        collect_features(os.path.join(directory, file),features_files,window_length,os.path.splitext(file)[0])
+        for file in input_files:
+            path = os.path.join(features_directories_correspondences[reaction_label], file)
+            print(f"Analyzing: {path} ({reaction_label.name})")
+            collect_features(path,features_files,window_length,reaction_label.name)
+            print("Done")
