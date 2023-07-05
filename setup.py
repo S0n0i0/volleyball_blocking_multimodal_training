@@ -7,5 +7,5 @@ setup(
     author_email='simone.compri@studenti.unitn.it',
     url='https://github.com/S0n0i0/volleyball_blocking_multimodal_training',
     packages=find_packages(),
-    install_requires=[],
+    install_requires=["scipy","numpy","mediapipe","opencv-python","pandas","matplotlib"],
 )

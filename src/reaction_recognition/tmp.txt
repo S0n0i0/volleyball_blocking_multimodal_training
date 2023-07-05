@@ -1,8 +1,0 @@
-'''# filter eyebrows connections Da sistemare: diminuire landmark mostrati
-    eyebrows_connections = []
-    print(mp.solutions.face_mesh.FACEMESH_RIGHT_EYEBROW)
-    print(mp.solutions.face_mesh.FACEMESH_LEFT_EYEBROW)'''
-
-print(mp.solutions.face_mesh.FACEMESH_LIPS)
-
-export_to_csv(files["face"].name,"a",face_row)

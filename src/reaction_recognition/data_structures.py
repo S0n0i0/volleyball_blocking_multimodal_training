@@ -1,16 +1,4 @@
-from typing import NamedTuple
 from enum import Enum
-
-# Common classes
-class Coordinate(NamedTuple):
-    x: float
-    y: float
-    z: float
-
-class Acceleration3D(NamedTuple):
-    x: float
-    y: float
-    z: float
 
 class Reaction(Enum):
     HAPPY = 1
@@ -18,34 +6,34 @@ class Reaction(Enum):
     NEUTRAL = 3
 
 #Common variables
-directories = {
+directories = { # Base directories
     "samples": "./samples/",
     "support_files": "./support_files/"
 }
 
-support_files = {
-    "pose": {
+support_files = { # Files of the program
+    "pose": { # Features file for imu_reaction_recognition
         "name": "pose.csv",
         "new": True
     },
-    "face": {
+    "face": { # Features file for face_reaction_recognition
         "name": "face.csv",
         "new": False
     },
-    "pose_model": {
+    "pose_model": { # model file for imu_reaction_recognition
         "name": "pose.pkl",
-        "new": True # Da sistemare: in main.py non fare training se Fasle
+        "new": True
     }
 }
 
-features_directories_correspondences : dict[Reaction,str] = {
+features_directories_correspondences : dict[Reaction,str] = { # Directories to take samples
     Reaction.HAPPY: directories["samples"] + "happy",
     Reaction.ANGRY: directories["samples"] + "angry",
 }
 
-window_length = 5
+window_length = 5 # Window length for imu_reaction_recognition
 
-wrists_ids = [15,16] # Wrists landmark ids [left,right]
-eyebrows_ids = [[285,336],[55,107]] # Eyebrows landmark ids [left,right] ,282,334    ,295,296,65,66,52,105
-nose_ids = [197,195]
-corners_lips_ids = [[61,185,146],[291,375,409]] # Corner lips landmark ids [left,right]
+wrists_ids = [15,16] # Wrists landmark ids [left,right]. Used for imu_reaction_recognition
+eyebrows_ids = [[285,336],[55,107]] # Eyebrows landmark ids [left,right]. Used to detect anger when they go down
+nose_ids = [197,195] # Nose landmark ids. Used to rescale values, since central nose measures doesn't change
+corners_lips_ids = [[61,185,146],[291,375,409]] # Corner lips landmark ids [left,right]. Used to detect joy when they go up

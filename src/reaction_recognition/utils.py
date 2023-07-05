@@ -2,7 +2,7 @@ from scipy.signal import savgol_filter
 import numpy as np
 import csv
 
-def compute_acceleration(tensor: np.ndarray) -> np.ndarray: # (543, 133, 3)
+def compute_acceleration(tensor: np.ndarray) -> np.ndarray: # compute accelerations given a tensor of 3D positions
     points, frames, dims = np.shape(tensor)
     new_data = []
     for point in range(points):
@@ -24,12 +24,12 @@ def compute_acceleration(tensor: np.ndarray) -> np.ndarray: # (543, 133, 3)
 
     return acceleration
 
-def export_to_csv(file,mode,row):
+def export_to_csv(file,mode,row): # Write on a csv
     with open(file, mode=mode, newline='') as f:
         csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(row)
 
-def get_features(source,ids: list[int] | list[list[int]], attribute: str = None,function = None,other_arguments: dict[str,any] = {}) -> list:
+def get_features(source,ids: list[int] | list[list[int]], attribute: str = None,function = None,other_arguments: dict[str,any] = {}) -> list: # General functions to get featres given a source, reference ids, the eventual attribute to take and the eventual function to apply
     features = []
     if function is None:
         for group in ids:

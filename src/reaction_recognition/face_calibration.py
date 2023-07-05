@@ -18,6 +18,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
     nose_positions = []
 
     count = 0
+    print("Do a neautral face")
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
         while cap.isOpened():
             ret, frame = cap.read()
@@ -69,10 +70,13 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
     eyebrows_positions = np.array(eyebrows_positions)
     nose_positions = np.array(nose_positions)
     
+    # Initialize calibration file
     if support_files["face"]["new"]:
         title_row = ["id","n_p","l_l_p","r_l_p","l_e_p","r_e_p"]
         export_to_csv(os.path.join(directories["support_files"],output_files["face"]["name"]),"w",title_row)
         support_files["face"]["new"] = False
+    
+    # Add calibration
     calibration_row = [id,
                        #np.mean([face[landmark_id].y for landmark_id in center_lips]),
                        np.mean(nose_positions[:,0]),
@@ -80,6 +84,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
                        np.mean(eyebrows_positions[:,0]),np.mean(eyebrows_positions[:,1])]
     export_to_csv(os.path.join(directories["support_files"],output_files["face"]["name"]),"a",calibration_row)
 
+    # Plot calibration
     data = False
     plt.figure(figsize=(12, 9))
     #plt.plot(center_positions[:,0], label="center")
@@ -99,6 +104,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
         plt.legend()
         plt.show()
 
+# Data to visualize in the plot
 plots = {
     "nose": True,
     "lips": True,
@@ -106,8 +112,8 @@ plots = {
 }
 
 print("How many people do you want to calibrate? ")
-n = 1#int(input())
+n = int(input())
 for i in range(n):
     print("Who are you calibrating? ")
-    id = 0#input()
+    id = input()
     face_calibration(support_files,id,plots)

@@ -1,17 +1,13 @@
 import mediapipe as mp # Import mediapipe
 import cv2 # Import opencv
 import numpy as np
-import matplotlib.pyplot as plt
-import os
-import pandas as pd
-import pickle
 
-from data_structures import directories,window_length,wrists_ids,eyebrows_ids,corners_lips_ids,nose_ids
+from data_structures import window_length,eyebrows_ids,corners_lips_ids,nose_ids
 from utils import get_features
 from imu_reaction_recognition import recognize_by_imu
 from face_reaction_recognition import recognize_by_face
 
-def detect_reaction(source,window_length,plots: dict[str,bool] = {}):
+def detect_reaction(source,window_length,plots: dict[str,bool] = {}): # Run reaction recognition
 
     mp_drawing = mp.solutions.drawing_utils # Drawing helpers
     mp_holistic = mp.solutions.holistic # Mediapipe Solutions
@@ -83,15 +79,19 @@ def detect_reaction(source,window_length,plots: dict[str,bool] = {}):
     cap.release()
     cv2.destroyAllWindows()
 
+    # Face recognition
     lips_positions = np.array(lips_positions)
     eyebrows_positions = np.array(eyebrows_positions)
     nose_distances = np.array(nose_distances)
-    recognize_by_face(0,lips_positions,eyebrows_positions,nose_distances,plots)
+    id = 0 # Future implementation: face identification
+    recognize_by_face(id,lips_positions,eyebrows_positions,nose_distances,plots)
 
+    # IMU recognition
     pose_positions = np.array(pose_positions)
     pose_visibility = np.array(pose_visibility)
-    pose_reaction_class, pose_reaction_prob = recognize_by_imu(window_length,wrists_ids,pose_positions,pose_visibility)
+    #pose_reaction_class, pose_reaction_prob = recognize_by_imu(window_length,wrists_ids,pose_positions,pose_visibility)
 
+# Data to visualize in the plot
 plots = {
     "lips": True,
     "eyebrows": True,
