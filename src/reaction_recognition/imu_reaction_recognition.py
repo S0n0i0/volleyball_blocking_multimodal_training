@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import pickle
+import pandas as pd
 
+from data_structures import directories,support_files,Reaction
 from utils import compute_acceleration,export_to_csv
 
 def get_acceleration_features(window_length: int, wrists_id: list[int], pose_positions: np.ndarray, pose_visibility: np.ndarray, plots: dict[str,bool] = {}, label = None, directories: dict = {}, output_files: dict = {}) -> list:
@@ -53,3 +56,14 @@ def get_acceleration_features(window_length: int, wrists_id: list[int], pose_pos
             export_to_csv(os.path.join(directories["support_files"],output_files["pose"]["name"]),"a",pose_row)
     
     return pose_X
+
+def recognize_by_imu(window_length: int, wrists_ids: list, pose_positions: np.ndarray, pose_visibility: np.ndarray) -> list[Reaction,float]:
+    
+    with open(os.path.join(directories["support_files"],support_files["pose_model"]["name"]), "rb") as f:
+        model = pickle.load(f)
+        
+        pose_X = pd.DataFrame(get_acceleration_features(window_length,wrists_ids,pose_positions,pose_visibility))
+        reaction_class = model.predict(pose_X)[0]
+        reaction_prob = model.predict_proba(pose_X)[0]
+
+        return [reaction_class,reaction_prob]
