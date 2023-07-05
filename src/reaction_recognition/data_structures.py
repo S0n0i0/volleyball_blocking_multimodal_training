@@ -23,7 +23,7 @@ directories = {
     "support_files": "./support_files/"
 }
 
-features_files = {
+support_files = {
     "pose": {
         "name": "pose.csv",
         "new": True
@@ -41,7 +41,7 @@ features_directories_correspondences : dict[Reaction,str] = {
 
 window_length = 5
 
-wrists_id = [15,16] # Wrists landmark ids [left,right]
-eyebrows_id = [[285,336,295,296,282,334],[55,107,65,66,52,105]] # Eyebrows landmark ids [left,right]
-center_lips = [13,14]
-corners_lips_id = [[61,185,146],[291,375,409]] # Corner lips landmark ids [left,right]
+wrists_ids = [15,16] # Wrists landmark ids [left,right]
+eyebrows_ids = [[285,336,295,296,282,334],[55,107,65,66,52,105]] # Eyebrows landmark ids [left,right]
+nose_ids = [197,195]
+corners_lips_ids = [[61,185,146],[291,375,409]] # Corner lips landmark ids [left,right]

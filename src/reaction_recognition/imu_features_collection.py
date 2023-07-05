@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 from utils import export_to_csv
-from data_structures import Reaction,directories,wrists_id,features_files,window_length,features_directories_correspondences
+from data_structures import Reaction,directories,wrists_ids,support_files,window_length,features_directories_correspondences
 from imu_reaction_recognition import get_acceleration_features
 
 def collect_features(source: str | int, output_files, window_length: int, label: Reaction):
@@ -73,7 +73,7 @@ def collect_features(source: str | int, output_files, window_length: int, label:
     # Hypotesis: (frame,point,dims) -> (point,dims,frame)
     positions = np.array(positions)
     visibility = np.array(visibility)
-    get_acceleration_features(window_length,wrists_id,positions,visibility,plots,label,directories,output_files)
+    get_acceleration_features(window_length,wrists_ids,positions,visibility,plots,label,directories,output_files)
 
 fromWebCam = False
 label = "hi"
@@ -83,7 +83,7 @@ plots = {
 }
 
 if fromWebCam:
-    collect_features(0,features_files,window_length,label)
+    collect_features(0,support_files,window_length,label)
 else:
     for reaction_label in features_directories_correspondences.keys():
         # List of file in a directory
@@ -92,5 +92,5 @@ else:
         for file in input_files:
             path = os.path.join(features_directories_correspondences[reaction_label], file)
             print(f"Analyzing: {path} ({reaction_label.name})")
-            collect_features(path,features_files,window_length,reaction_label.name)
+            collect_features(path,support_files,window_length,reaction_label.name)
             print("Done")

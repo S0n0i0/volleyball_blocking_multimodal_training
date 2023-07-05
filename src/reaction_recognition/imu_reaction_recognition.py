@@ -4,7 +4,7 @@ import os
 
 from utils import compute_acceleration,export_to_csv
 
-def get_acceleration_features(window_length: int, wrists_id: list[int], pose_positions: np.ndarray, pose_visibility: np.ndarray, plots: dict[str,bool], label = None, directories: dict = {}, output_files: dict = {}) -> list:
+def get_acceleration_features(window_length: int, wrists_id: list[int], pose_positions: np.ndarray, pose_visibility: np.ndarray, plots: dict[str,bool] = {}, label = None, directories: dict = {}, output_files: dict = {}) -> list:
 
     export = False
     if len(directories.keys()) > 0 and len(output_files.keys()) > 0:
@@ -13,7 +13,7 @@ def get_acceleration_features(window_length: int, wrists_id: list[int], pose_pos
     accelerations = compute_acceleration(pose_positions)
 
     # Plot the positions over time
-    if plots["positions"]:
+    if "positions" in plots.keys() and plots["positions"]:
         plt.figure(figsize=(12, 9))
         plt.plot(pose_positions[:,15,0], label="left_x")
         plt.plot(pose_positions[:,15,1], label="left_y")
@@ -26,7 +26,7 @@ def get_acceleration_features(window_length: int, wrists_id: list[int], pose_pos
         plt.show()
     
     # Plot the acceleration over time
-    if plots["accelerations"]:
+    if "accelerations" in plots.keys() and plots["accelerations"]:
         plt.figure(figsize=(12, 9))
         plt.plot(np.multiply(accelerations[:,0,15],pose_visibility[:,15,0]), label="left")
         plt.plot(np.multiply(accelerations[:,0,16],pose_visibility[:,16,0]), label="right")

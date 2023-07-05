@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import pickle
 
-from data_structures import directories,window_length,wrists_id,eyebrows_id,corners_lips_id,center_lips
+from data_structures import directories,window_length,wrists_ids,eyebrows_ids,corners_lips_ids,nose_ids
 from utils import get_acceleration_features
 
 def detect_reaction(source,window_length,model):
@@ -61,8 +61,8 @@ def detect_reaction(source,window_length,model):
                     face = results.face_landmarks.landmark
                     #center_positions += [[face[landmark_id].y for landmark_id in center_lips]] 
                     lips_positions += [[#np.mean([face[landmark_id].y for landmark_id in center_lips]),
-                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_id[0]]),
-                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_id[1]])]]
+                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_ids[0]]),
+                                 np.mean([face[landmark_id].y for landmark_id in corners_lips_ids[1]])]]
                     
                     #face_row = list(np.array([[face[landmark].y, face[landmark].visibility] for landmark in np.array(eyebrows_id).flatten()]).flatten())
                     
@@ -100,7 +100,7 @@ def detect_reaction(source,window_length,model):
 
     pose_positions = np.array(pose_positions)
     pose_visibility = np.array(pose_visibility)
-    pose_X = pd.DataFrame(get_acceleration_features(window_length,wrists_id,pose_positions,pose_visibility))
+    pose_X = pd.DataFrame(get_acceleration_features(window_length,wrists_ids,pose_positions,pose_visibility))
     pose_reaction_class = model.predict(pose_X)[0]
     pose_reaction_prob = model.predict_proba(pose_X)[0]
     print(pose_reaction_class, pose_reaction_prob)

@@ -12,9 +12,9 @@ import pickle
 import os
 import numpy as np
 
-from data_structures import features_files,directories
+from data_structures import support_files,directories
 
-df = pd.read_csv(os.path.join(directories["support_files"],features_files["pose"]["name"]))
+df = pd.read_csv(os.path.join(directories["support_files"],support_files["pose"]["name"]))
 
 X = df.drop('class', axis=1) # features
 y = df['class'] # target value
