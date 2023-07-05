@@ -15,7 +15,7 @@ class Acceleration3D(NamedTuple):
 class Reaction(Enum):
     HAPPY = 1
     ANGRY = 2
-    TENSE = 3
+    NEUTRAL = 3
 
 #Common variables
 directories = {
@@ -30,7 +30,7 @@ support_files = {
     },
     "face": {
         "name": "face.csv",
-        "new": True
+        "new": False
     },
 }
 
@@ -42,6 +42,6 @@ features_directories_correspondences : dict[Reaction,str] = {
 window_length = 5
 
 wrists_ids = [15,16] # Wrists landmark ids [left,right]
-eyebrows_ids = [[285,336,295,296,282,334],[55,107,65,66,52,105]] # Eyebrows landmark ids [left,right]
+eyebrows_ids = [[285,336],[55,107]] # Eyebrows landmark ids [left,right] ,282,334    ,295,296,65,66,52,105
 nose_ids = [197,195]
 corners_lips_ids = [[61,185,146],[291,375,409]] # Corner lips landmark ids [left,right]

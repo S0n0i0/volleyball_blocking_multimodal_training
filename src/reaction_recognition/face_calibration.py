@@ -5,7 +5,7 @@ import os
 import matplotlib.pyplot as plt
 
 from data_structures import directories,support_files,eyebrows_ids,corners_lips_ids,nose_ids
-from utils import export_to_csv
+from utils import export_to_csv,get_features
 
 def face_calibration(output_files, id, plots: dict[str,bool] = {}):
 
@@ -42,10 +42,9 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
                 try:
                     # Extract Face landmarks
                     face = results.face_landmarks.landmark
-                    lips_positions += [[np.mean([face[landmark_id].y for landmark_id in corners_lips_ids[0]]),
-                                        np.mean([face[landmark_id].y for landmark_id in corners_lips_ids[1]])]]
-                    eyebrows_positions += [[np.mean([face[landmark_id].y for landmark_id in eyebrows_ids[0]]),
-                                            np.mean([face[landmark_id].y for landmark_id in eyebrows_ids[1]])]]
+                    #center_positions += [[face[landmark_id].y for landmark_id in center_lips]]
+                    lips_positions += [get_features(face,corners_lips_ids,"y",np.mean)]
+                    eyebrows_positions += [get_features(face,eyebrows_ids,"y",np.mean)]
                     nose_distances += [[face[nose_ids[0]].y-face[nose_ids[1]].y]]
 
                 except Exception as err:
@@ -75,6 +74,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
         export_to_csv(os.path.join(directories["support_files"],output_files["face"]["name"]),"w",title_row)
         support_files["face"]["new"] = False
     calibration_row = [id,
+                       #np.mean([face[landmark_id].y for landmark_id in center_lips]),
                        np.mean(nose_distances[:,0]),
                        np.mean(lips_positions[:,0]),np.mean(lips_positions[:,1]),
                        np.mean(eyebrows_positions[:,0]),np.mean(eyebrows_positions[:,1])]
