@@ -32,6 +32,10 @@ support_files = {
         "name": "face.csv",
         "new": False
     },
+    "pose_model": {
+        "name": "pose.pkl",
+        "new": True # Da sistemare: in main.py non fare training se Fasle
+    }
 }
 
 features_directories_correspondences : dict[Reaction,str] = {
