@@ -29,20 +29,24 @@ def export_to_csv(file,mode,row):
         csv_writer = csv.writer(f, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         csv_writer.writerow(row)
 
-def get_features(source,ids: list[int], attribute: str = None,function = None,other_arguments: dict[str,any] = {}) -> list:
+def get_features(source,ids: list[int] | list[list[int]], attribute: str = None,function = None,other_arguments: dict[str,any] = {}) -> list:
     features = []
     if function is None:
         for group in ids:
+            if isinstance(group,int):
+                group = [group]
             if attribute is None:
                 features += [[source[id] for id in group]]
             else:
                 features += [[getattr(source[id],attribute) for id in group]]
     else:
         for group in ids:
+            if isinstance(group,int):
+                group = [group]
             if attribute is None:
-                features +=[function([source[id] for id in group],**other_arguments)]
+                features += [function([source[id] for id in group],**other_arguments)]
             else:
-                features +=[function([getattr(source[id],attribute) for id in group],**other_arguments)]
+                features += [function([getattr(source[id],attribute) for id in group],**other_arguments)]
     return features
 
 '''def get_landmarks_y_averages(source,ids: list[int]) -> list:

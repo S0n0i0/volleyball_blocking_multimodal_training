@@ -15,7 +15,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
     cap = cv2.VideoCapture(0)
     lips_positions = []
     eyebrows_positions = []
-    nose_distances = []
+    nose_positions = []
 
     count = 0
     with mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
@@ -45,7 +45,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
                     #center_positions += [[face[landmark_id].y for landmark_id in center_lips]]
                     lips_positions += [get_features(face,corners_lips_ids,"y",np.mean)]
                     eyebrows_positions += [get_features(face,eyebrows_ids,"y",np.mean)]
-                    nose_distances += [[face[nose_ids[0]].y-face[nose_ids[1]].y]]
+                    nose_positions += [get_features(face,nose_ids,"y",np.mean)]
 
                 except Exception as err:
                     print(err)
@@ -67,15 +67,15 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
 
     lips_positions = np.array(lips_positions)
     eyebrows_positions = np.array(eyebrows_positions)
-    nose_distances = np.array(nose_distances)
+    nose_positions = np.array(nose_positions)
     
     if support_files["face"]["new"]:
-        title_row = ["id","n_d","l_l_p","r_l_p","l_e_p","r_e_p"]
+        title_row = ["id","n_p","l_l_p","r_l_p","l_e_p","r_e_p"]
         export_to_csv(os.path.join(directories["support_files"],output_files["face"]["name"]),"w",title_row)
         support_files["face"]["new"] = False
     calibration_row = [id,
                        #np.mean([face[landmark_id].y for landmark_id in center_lips]),
-                       np.mean(nose_distances[:,0]),
+                       np.mean(nose_positions[:,0]),
                        np.mean(lips_positions[:,0]),np.mean(lips_positions[:,1]),
                        np.mean(eyebrows_positions[:,0]),np.mean(eyebrows_positions[:,1])]
     export_to_csv(os.path.join(directories["support_files"],output_files["face"]["name"]),"a",calibration_row)
@@ -84,7 +84,7 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
     plt.figure(figsize=(12, 9))
     #plt.plot(center_positions[:,0], label="center")
     if "nose" in plots.keys() and plots["nose"]:
-        plt.plot(nose_distances[:,0], label="nose")
+        plt.plot(nose_positions[:,0], label="nose")
         data = True
     if "lips" in plots.keys() and plots["lips"]:
         plt.plot(lips_positions[:,0], label="left_corner_lip")
@@ -100,14 +100,14 @@ def face_calibration(output_files, id, plots: dict[str,bool] = {}):
         plt.show()
 
 plots = {
-    "nose": False,
+    "nose": True,
     "lips": True,
     "eyebrows": True
 }
 
 print("How many people do you want to calibrate? ")
-n = int(input())
+n = 1#int(input())
 for i in range(n):
     print("Who are you calibrating? ")
-    id = input()
+    id = 0#input()
     face_calibration(support_files,id,plots)
