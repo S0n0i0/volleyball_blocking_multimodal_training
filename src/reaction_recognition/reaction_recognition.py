@@ -91,10 +91,10 @@ def detect_reaction(source,window_length,plots: dict[str,bool] = {}): # Run reac
     pose_visibility = np.array(pose_visibility)
     #pose_reaction_class, pose_reaction_prob = recognize_by_imu(window_length,wrists_ids,pose_positions,pose_visibility)
 
-# Data to visualize in the plot
+# Data to visualize in the plot (lips and eyebrows together not recommended due to distant values)
 plots = {
     "lips": True,
-    "eyebrows": True,
+    "eyebrows": False,
     "calibration": True,
 }
 

@@ -17,26 +17,30 @@ def recognize_by_face(id, lips_positions: np.ndarray, eyebrows_positions: np.nda
     for reaction in Reaction:
         votes[reaction] = 0
 
-    # Prepare base (calibration) values
+    # Prepare calibration values
     frames = np.shape(lips_positions)[0]
-    base_lips = np.full((frames,2),[reference["l_l_p"][0],reference["r_l_p"][0]])
-    base_eyebrows = np.full((frames,2),[reference["l_e_p"][0],reference["r_e_p"][0]])
-    base_nose = np.full((frames,1),reference["n_p"][0])
+    neutral_lips = np.full((frames,2),[reference["l_l_n"][0],reference["r_l_n"][0]])
+    neutral_eyebrows = np.full((frames,2),[reference["l_e_n"][0],reference["r_e_n"][0]])
+    neutral_nose = np.full((frames,1),reference["n_n"][0])
+    high_lips = np.full((frames,2),[reference["l_l_h"][0],reference["r_l_h"][0]])
+    low_eyebrows = np.full((frames,2),[reference["l_e_l"][0],reference["r_e_l"][0]])
     
     #rescaled_base_lips:nose = base_lips:base_nose
-    rescaled_base_lips = base_lips*nose_positions/base_nose
+    rescaled_base_lips = neutral_lips*nose_positions/neutral_nose
     #rescaled_base_eyebrows:nose = base_eyebrows:base_nose
-    rescaled_base_eyebrows = base_eyebrows*nose_positions/base_nose
-    base_differences = {
-        "lips": base_lips - base_nose,
-        "eyebrows": base_eyebrows - base_nose
+    rescaled_base_eyebrows = neutral_eyebrows*nose_positions/neutral_nose
+    base_nose_differences = {
+        "neutral_lips": neutral_lips - neutral_nose,
+        "neutral_eyebrows": neutral_eyebrows - neutral_nose,
+        "high_lips": high_lips - neutral_nose,
+        "low_eyebrows": low_eyebrows - neutral_nose
     }
 
     # Compute differences using rescaled values
     #(lips-rescaled_base_lips):(lips-nose)=x:(base_lips-base_nose)
-    differences = {
-        "lips": (lips_positions - rescaled_base_lips)*(base_lips-base_nose)/(lips_positions-nose_positions),
-        "eyebrows": (eyebrows_positions - rescaled_base_eyebrows)*(base_eyebrows-base_nose)/(eyebrows_positions-nose_positions)
+    rescaled_differences = {
+        "lips": (lips_positions - rescaled_base_lips)*(base_nose_differences["neutral_lips"])/(lips_positions-nose_positions),
+        "eyebrows": (eyebrows_positions - rescaled_base_eyebrows)*(base_nose_differences["neutral_eyebrows"])/(eyebrows_positions-nose_positions)
     }
 
     '''# Hypotesis: use find_peaks
@@ -47,21 +51,25 @@ def recognize_by_face(id, lips_positions: np.ndarray, eyebrows_positions: np.nda
     data = False
     plt.figure(figsize=(12, 9))
     if "lips" in plots.keys() and plots["lips"]:
-        plt.plot(differences["lips"][:,0], label="left_corner_lip")
+        plt.plot(rescaled_differences["lips"][:,0], label="rescaled_left_corner_lip")
         #plt.plot(left_peaks, differences["lips"][left_peaks,0], "x")
-        plt.plot(differences["lips"][:,1], label="right_corner_lip")
+        plt.plot(rescaled_differences["lips"][:,1], label="rescaled_right_corner_lip")
         #plt.plot(right_peaks, differences["lips"][right_peaks,1], "x")
         #find peaks of differences["lips"] and plot them
         if "calibration" in plots.keys() and plots["calibration"]:
-            plt.plot(base_differences["lips"][:,0], label="base_left_corner_lip")
-            plt.plot(base_differences["lips"][:,1], label="base_right_corner_lip")
+            plt.plot(base_nose_differences["neutral_lips"][:,0], label="neutral_nose-left_corner_lip")
+            plt.plot(base_nose_differences["neutral_lips"][:,1], label="neutral_nose-right_corner_lip")
+            #plt.plot(base_nose_differences["high_lips"][:,0], label="high_nose-left_corner_lip")
+            #plt.plot(base_nose_differences["high_lips"][:,1], label="high_nose-right_corner_lip")
         data = True
     if "eyebrows" in plots.keys() and plots["eyebrows"]:
-        plt.plot(differences["eyebrows"][:,0], label="left_eyebrow")
-        plt.plot(differences["eyebrows"][:,1], label="right_eyebrow")
+        plt.plot(rescaled_differences["eyebrows"][:,0], label="rescaled_left_eyebrow")
+        plt.plot(rescaled_differences["eyebrows"][:,1], label="rescaled_right_eyebrow")
         if "calibration" in plots.keys() and plots["calibration"]:
-            plt.plot(base_differences["eyebrows"][:,0], label="base_left_eyebrow")
-            plt.plot(base_differences["eyebrows"][:,1], label="base_right_eyebrow")
+            plt.plot(base_nose_differences["neutral_eyebrows"][:,0], label="neutral_nose-left_eyebrow")
+            plt.plot(base_nose_differences["neutral_eyebrows"][:,1], label="neutral_nose-right_eyebrow")
+            #plt.plot(base_nose_differences["low_eyebrows"][:,0], label="low_nose-left_eyebrow")
+            #plt.plot(base_nose_differences["low_eyebrows"][:,1], label="low_nose-right_eyebrow")
         data = True
     plt.grid(True)
     if data:

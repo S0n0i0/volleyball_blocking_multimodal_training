@@ -1,9 +1,9 @@
 from enum import Enum
 
 class Reaction(Enum):
+    NEUTRAL = 0
     HAPPY = 1
     ANGRY = 2
-    NEUTRAL = 3
 
 #Common variables
 directories = { # Base directories
@@ -18,7 +18,7 @@ support_files = { # Files of the program
     },
     "face": { # Features file for face_reaction_recognition
         "name": "face.csv",
-        "new": False
+        "new": True
     },
     "pose_model": { # model file for imu_reaction_recognition
         "name": "pose.pkl",
@@ -32,6 +32,7 @@ features_directories_correspondences : dict[Reaction,str] = { # Directories to t
 }
 
 window_length = 5 # Window length for imu_reaction_recognition
+time_between = 2 # Time between one face and the other (neutral,happy and angry) during the face_calibration
 
 wrists_ids = [15,16] # Wrists landmark ids [left,right]. Used for imu_reaction_recognition
 eyebrows_ids = [[285,336],[55,107]] # Eyebrows landmark ids [left,right]. Used to detect anger when they go down

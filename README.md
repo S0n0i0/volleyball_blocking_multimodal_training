@@ -32,4 +32,6 @@ py ./src/reaction_recognition/face_calibration.py
 py ./src/reaction_recognition/reaction_recognition.py
 ```
 
-To make the face_reaction_recognition work should be developed a dynamic threshold solution, since the distances are little and it's difficult to solve this problem with a fixed threshold.
+To make the face_reaction_recognition work should be developed:
+* A rescaling based also on the maximum value of each features. Done in calibration, but the missing part is the reference in the testing part (possible solution: computation of maximum given facial characteristics)
+* A dynamic threshold solution based on a calibration of happy and angry face. This because the rescaled distances can be little and it's difficult to solve this problem with a fixed threshold
